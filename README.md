@@ -22,13 +22,29 @@
 | HU-FIN-005 | List the movement detail of a period to reconcile a balance that does not add up | todo | Pending - branch hu-fin-005-dev not opened yet |
 
 ## 2. My individual contribution
+-
+-
+-
+-
+-
 
 
 ## 3. Blockers and risks
+-
+-
+-
+-
+-
+-
 
 
 ## 4. Plan for next week
-
+-
+-
+-
+-
+-
+-
 
 ## 5. Compliance self-check
 - [x] Conventional Commits - `type(scope): summary`
