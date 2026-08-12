@@ -66,6 +66,5 @@ Notes on the unchecked items:
 - 
 - 
 
-![Distributed Systems - Week 2 summary: distributed architectures, architectural decision, ADR and backlog](./resumen_sistemas_distribuidos_semana_2_preview.png)
 
 Key principle taken from the material: **split for a reason, not for fashion** - a good architecture makes boundaries, contracts, trade-offs and the motive of the decision explicit.
