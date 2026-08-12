@@ -6,10 +6,10 @@
 # Weekly Status - Week 01
 
 <!-- CONFIG-START - must match your profile repo (username/username) CONFIG -->
-- FULL_NAME: Jesus Ariel Gonzalez Bonilla
-- GITHUB_USER: ariel5253
-- TEAM: Group 1 - PRJ-FERRETERIA-V13
-- SPRINT_GOAL: Turn the hardware-store cash-control brief into a bounded context map, an ADR for the architectural style, and a testable backlog of income/expense/summary user stories.
+- FULL_NAME: Stephan Vargas Quiroga
+- GITHUB_USER: stephanvargas
+- TEAM: Group 1 - 
+- SPRINT_GOAL:
 <!-- CONFIG-END -->
 
 ## 1. User stories worked this week
