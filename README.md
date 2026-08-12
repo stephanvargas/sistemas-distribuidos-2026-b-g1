@@ -61,10 +61,10 @@ Notes on the unchecked items:
 - The hexagonal layering is designed but not yet materialised in code.
 
 ## 6. Evidence links
-- Product brief: [`prd.md`](./prd.md) - PRJ-FERRETERIA-V13 (context, needs, current process, open questions, glossary).
-- Repository structure commit: https://github.com/code-corhuila/sistemas-distribuidos-2026-b-g1/commit/b4ae1cc
-- Course learning material (OVAs): https://code-corhuila.github.io/ova-web/2026-B/distribuidos/
-- Session summary used for the architectural decision - vector source: [`resumen_sistemas_distribuidos_semana_2.svg`](./resumen_sistemas_distribuidos_semana_2.svg)
+- 
+- 
+- 
+- 
 
 ![Distributed Systems - Week 2 summary: distributed architectures, architectural decision, ADR and backlog](./resumen_sistemas_distribuidos_semana_2_preview.png)
 
