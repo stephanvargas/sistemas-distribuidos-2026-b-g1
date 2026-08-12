@@ -65,7 +65,7 @@ Notes on the unchecked items:
 - 
 - 
 - 
-[Uploading distributed_systems_concept_graph.md…]()
+
 
 
 Key principle taken from the material: **split for a reason, not for fashion** - a good architecture makes boundaries, contracts, trade-offs and the motive of the decision explicit.
