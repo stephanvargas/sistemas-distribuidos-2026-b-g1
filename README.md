@@ -65,9 +65,7 @@ Notes on the unchecked items:
 - 
 - 
 - 
-## Diagrama de Sistemas Distribuidos
 
-![Diagrama de Sistemas Distribuidos](docs/diagrama-sistemas-distribuidos.png)
 
 
 Key principle taken from the material: **split for a reason, not for fashion** - a good architecture makes boundaries, contracts, trade-offs and the motive of the decision explicit.
