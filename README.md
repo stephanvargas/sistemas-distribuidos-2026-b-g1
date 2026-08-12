@@ -8,7 +8,7 @@
 <!-- CONFIG-START - must match your profile repo (username/username) CONFIG -->
 - FULL_NAME: Stephan Vargas Quiroga
 - GITHUB_USER: stephanvargas
-- TEAM: Group 1 - 
+- TEAM: The Unstoppables 
 - SPRINT_GOAL:
 <!-- CONFIG-END -->
 
