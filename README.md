@@ -1,4 +1,4 @@
-# sistemas-distribuidos-2026-b-g1
+
 <!-- HU-STATUS TEMPLATE - do NOT remove the <!-- ... --> markers or the table headers.
      Your weekly grade is read AUTOMATICALLY from this file:
        01-week/hu-status/README.md  (inside YOUR fork). English. -->
