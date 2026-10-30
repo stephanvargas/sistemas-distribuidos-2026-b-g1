@@ -1,32 +1,32 @@
-# Guía de Ejecución y Evidencia CI: Identity Authorization Negative Test
+# HOW-TO-RUN: Identity Authorization Negative Security Test & CI Gates
 
-Esta guía documenta la verificación de seguridad para el microservicio `educk-identity-api`, validando los criterios de aceptación de la Historia [#76](https://github.com/code-corhuila/educk-docs/issues/76) y mitigando el vector de riesgo STRIDE I (Information Disclosure / BOLA / IDOR, Riesgo 9, P0).
+This guide documents the execution and verification of the negative security test suite for `educk-identity-api`, satisfying the automated acceptance criteria of Security Backlog Story [#76](https://github.com/code-corhuila/educk-docs/issues/76) and mitigating STRIDE Threat I (Information Disclosure / BOLA / IDOR, Risk Score 9, P0).
 
-## 1. Alcance y Componentes Bajo Prueba
+## 1. Scope & System Under Test
 
-- **Clase Evaluada:** `IdentityAuthorizationNegativeTest.java`
-- **Módulo Afectado:** `educk-identity-api` (Spring Boot 3, puerto 8081)
-- **Ruta Objetivo:** `GET /api/v1/auth/users/{id}`
-- **Principio de Autorización:**
-  Aplica el modelo de matrices de control de acceso y dominios de protección de Tanenbaum & Van Steen (2008), Sección 9.3 [B]. La regla prohíbe que cualquier sujeto autenticado (por ejemplo con rol `ROLE_STUDENT`) extraiga perfiles de terceros a menos que sea el dueño del recurso (`actorId == targetResourceId`) o posea credenciales de administración (`ROLE_ADMIN`), respondiendo con denegación estricta (`403 Forbidden`).
+- **Test Suite Class:** `IdentityAuthorizationNegativeTest.java`
+- **Target Microservice:** `educk-identity-api` (Spring Boot 3, Port 8081)
+- **Target Endpoint:** `GET /api/v1/auth/users/{id}`
+- **Security Rule Enforced:**
+  Implements the protection domain and access control matrix model from Tanenbaum & Van Steen (2008), Section 9.3 [B]. The authorization rule strictly forbids any authenticated caller (such as `ROLE_STUDENT`) from inspecting user profiles belonging to other individuals unless the caller is the resource owner (`actorId == targetResourceId`) or holds administrative privileges (`ROLE_ADMIN`), rejecting violations with HTTP `403 Forbidden` (`AccessDeniedException`).
 
-## 2. Instrucciones de Reproducción Local
+## 2. Local Reproduction Steps
 
-1. Ubicar la clase de prueba dentro del árbol de fuentes del servicio:
+1. Place the test class inside the test source directory:
    ```powershell
    Copy-Item "13-week\workshop\04-security-ci\IdentityAuthorizationNegativeTest.java" `
      -Destination "C:\Users\Ximena Del Pilar\Music\educk-identity-api\src\test\java\com\corhuila\edutrack\identity\infrastructure\web\"
    ```
 
-2. Ejecutar la suite mediante Apache Maven y JDK 21:
+2. Execute the test using Apache Maven with JDK 21:
    ```powershell
    cd "C:\Users\Ximena Del Pilar\Music\educk-identity-api"
    & "C:\Users\Ximena Del Pilar\Music\maven\apache-maven-3.9.9\bin\mvn.cmd" test -Dtest=IdentityAuthorizationNegativeTest
    ```
 
-## 3. Evidencia Real de Ejecución en Consola (CP8)
+## 3. Real Console Execution Output (CP8 Evidence)
 
-Salida registrada en entorno Windows 11 con Eclipse Adoptium JDK 21.0.9 y Apache Maven 3.9.9:
+Recorded on Windows 11 host using Eclipse Adoptium JDK 21.0.9 and Apache Maven 3.9.9:
 
 ```text
 [INFO] Scanning for projects...
@@ -70,12 +70,12 @@ Salida registrada en entorno Windows 11 con Eclipse Adoptium JDK 21.0.9 y Apache
 [INFO] ------------------------------------------------------------------------
 ```
 
-## 4. Validación del Pipeline de Seguridad (security.yml)
+## 4. Pipeline Workflow Validation (security.yml)
 
-El archivo de workflow `security.yml` fue analizado sintáctica y estructuralmente:
-- Validación YAML: 100% válida sin errores de indentación.
-- Disparadores: Eventos `push` y `pull_request` sobre `main` y `develop`.
-- Compuertas activadas:
-  1. `detect-credentials-and-secrets`: Detección preventiva de credenciales con Gitleaks.
-  2. `identity-sast-and-sca`: Escaneo de vulnerabilidades en dependencias y sistema de archivos con Trivy.
-  3. `verify-authorization-boundaries`: Compilación y ejecución forzosa de la prueba de autorización negativa en Maven.
+The GitHub Actions workflow definition `security.yml` was parsed and verified:
+- YAML Syntax: Fully conforming to YAML 1.2 specifications.
+- Trigger Events: Automated execution on `push` and `pull_request` targeting `main` and `develop`.
+- Security Gates:
+  1. `detect-credentials-and-secrets`: Scans complete git commit history using Gitleaks action v2 to intercept hardcoded tokens and private keys.
+  2. `identity-sast-and-sca`: Evaluates project filesystem and dependencies against CVE databases using Trivy with severity threshold `HIGH,CRITICAL`.
+  3. `verify-authorization-boundaries`: Runs the automated negative authorization regression test in JDK 21 to prevent BOLA/IDOR vulnerabilities from entering staging or production.

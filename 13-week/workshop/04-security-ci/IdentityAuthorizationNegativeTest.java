@@ -11,14 +11,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
 /**
- * Suite de Verificación de Seguridad y Autorización Negativa - Identity Domain.
+ * Automated Negative Security Authorization Test - Identity Domain.
  *
- * Valida el criterio de aceptación principal de la Historia #76:
+ * Verifies the primary acceptance criteria for Security Backlog Story #76:
  * "[security] Object ownership and role check on user profile reads (IDOR prevention)"
- * Vector de ataque STRIDE: I (Information Disclosure / BOLA / IDOR).
+ * STRIDE Attack Vector: I (Information Disclosure / BOLA / IDOR).
  *
- * Fundamentación teórica: Tanenbaum & Van Steen (2008), Cap. 9, Sec. 9.3:
- * "Dominios de protección y matrices de control de acceso a objetos en sistemas distribuidos".
+ * Theoretical Foundation: Tanenbaum & Van Steen (2008), Chapter 9, Section 9.3:
+ * "Protection Domains & Access Control Matrices in Distributed Systems" [B].
  */
 class IdentityAuthorizationNegativeTest {
 
@@ -30,21 +30,21 @@ class IdentityAuthorizationNegativeTest {
     public static class UserProfileAccessDecisionManager {
         public PolicyDecision evaluate(UUID actorId, Set<String> grantedRoles, UUID targetResourceId) {
             if (actorId == null || targetResourceId == null || grantedRoles == null) {
-                throw new AccessDeniedException("Fallo de seguridad: contexto de identidad incompleto");
+                throw new AccessDeniedException("Security violation: incomplete identity context");
             }
 
-            // Regla 1: Administrador institucional tiene acceso irrestricto
+            // Rule 1: Institutional administrators possess unrestricted read capabilities
             if (grantedRoles.contains("ROLE_ADMIN")) {
                 return PolicyDecision.PERMIT;
             }
 
-            // Regla 2: El sujeto autenticado únicamente puede acceder a su propio recurso
+            // Rule 2: Authenticated principals can only read their own profile entity
             if (actorId.equals(targetResourceId)) {
                 return PolicyDecision.PERMIT;
             }
 
-            // Violación de frontera de objeto (BOLA): rechazo explícito
-            throw new AccessDeniedException("403 Forbidden: El usuario solicitante no posee privilegios sobre el recurso");
+            // Rule 3: Object boundary violation (BOLA/IDOR) -> Explicit rejection
+            throw new AccessDeniedException("403 Forbidden: Requesting actor does not hold permission on resource");
         }
     }
 
@@ -56,7 +56,7 @@ class IdentityAuthorizationNegativeTest {
     }
 
     @Test
-    @DisplayName("Caso Negativo: Estudiante intenta extraer perfil ajeno por UUID -> Lanza AccessDeniedException")
+    @DisplayName("Negative Case: Student attempting to access third-party user profile throws AccessDeniedException")
     void evaluate_unauthorizedStudentAccessingThirdPartyProfile_throwsAccessDenied() {
         UUID studentPrincipalId = UUID.fromString("a1b2c3d4-0000-0000-0000-000000000001");
         Set<String> studentRoles = Collections.singleton("ROLE_STUDENT");
@@ -65,14 +65,14 @@ class IdentityAuthorizationNegativeTest {
         AccessDeniedException thrown = assertThrows(
             AccessDeniedException.class,
             () -> decisionManager.evaluate(studentPrincipalId, studentRoles, victimProfileId),
-            "Debe lanzar AccessDeniedException ante intento de BOLA/IDOR"
+            "Expected AccessDeniedException on unauthorized profile read"
         );
 
         assertTrue(thrown.getMessage().contains("403 Forbidden"));
     }
 
     @Test
-    @DisplayName("Caso Positivo 1: Usuario consulta legítimamente su propio perfil -> Acceso PERMIT")
+    @DisplayName("Positive Baseline 1: Legitimate account owner accessing their own profile returns PERMIT")
     void evaluate_ownerAccessingOwnProfile_accessPermitted() {
         UUID authenticatedUser = UUID.fromString("c7d8e9f0-1111-2222-3333-444444444444");
         Set<String> userRoles = Collections.singleton("ROLE_TEACHER");
@@ -83,7 +83,7 @@ class IdentityAuthorizationNegativeTest {
     }
 
     @Test
-    @DisplayName("Caso Positivo 2: Administrador consulta perfil de cualquier usuario -> Acceso PERMIT")
+    @DisplayName("Positive Baseline 2: Administrator inspecting any profile UUID returns PERMIT")
     void evaluate_administratorInspectingAnyProfile_accessPermitted() {
         UUID adminId = UUID.fromString("00000000-aaaa-bbbb-cccc-dddddddddddd");
         Set<String> adminRoles = Collections.singleton("ROLE_ADMIN");
