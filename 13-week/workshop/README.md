@@ -16,11 +16,11 @@ Individual workshop for Distributed Systems 2026-B (Corte 3).
 
 ## Security Backlog Stories
 
-| Issue | STRIDE | Priority | Title |
-|---|---|---|---|
-| [#76](https://github.com/code-corhuila/educk-docs/issues/76) | I (Info Disclosure / BOLA) | P0 | Object ownership and role check on user profile reads |
-| [#77](https://github.com/code-corhuila/educk-docs/issues/77) | S (Spoofing) | P1 | Caller authentication and internal network isolation for identity-api |
-| [#78](https://github.com/code-corhuila/educk-docs/issues/78) | E (Elevation of Privilege) | P1 | Enforce strict RBAC and self-service boundary on role assignments |
+| Issue | STRIDE | Priority | Title | Cross-Reference |
+|---|---|---|---|---|
+| [#76](https://github.com/code-corhuila/educk-docs/issues/76) | I (Info Disclosure / BOLA) | P0 | Object ownership and role check on user profile reads | Related to #71 (ownership check in communication domain) |
+| [#77](https://github.com/code-corhuila/educk-docs/issues/77) | S (Spoofing) | P1 | Caller authentication and internal network isolation for identity-api | Related to #72 (caller authentication on gateway boundaries) |
+| [#78](https://github.com/code-corhuila/educk-docs/issues/78) | E (Elevation of Privilege) | P1 | Enforce strict RBAC and self-service boundary on role assignments | Related to #73 (sender attribution and role verification) |
 
 ## Directory Structure
 
