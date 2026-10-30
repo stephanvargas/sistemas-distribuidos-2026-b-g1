@@ -1,4 +1,4 @@
-name: Security Gates - educk-identity-api
+name: Identity Security Gates & Authorization Enforcement
 
 on:
   push:
@@ -6,55 +6,54 @@ on:
   pull_request:
     branches: [ main, develop ]
 
-permissions:
-  contents: read
-  security-events: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  secret-scan:
-    name: Secret Detection (Gitleaks)
+  detect-credentials-and-secrets:
+    name: Secret Detection & Key Leakage Guard (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Fetch source tree with complete history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run Gitleaks
+      - name: Analyze commits for hardcoded JWT secrets and credentials
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  vulnerability-scan:
-    name: Dependency & Container SCA (Trivy)
+  identity-sast-and-sca:
+    name: Dependency Vulnerability Analysis (Trivy SCA)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Fetch code
         uses: actions/checkout@v4
 
-      - name: Run Trivy Vulnerability Scanner
+      - name: Execute Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
-          ignore-unfixed: true
           severity: 'HIGH,CRITICAL'
           format: 'table'
           exit-code: '1'
 
-  negative-authorization-test:
-    name: Negative Authorization Security Test (Story #76)
+  verify-authorization-boundaries:
+    name: Automated Negative Authorization Regression Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Initialize JDK 21 Environment
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      - name: Execute Negative Authorization Security Test
+      - name: Run Identity Negative Authorization Suite
         run: |
           mvn test -Dtest=IdentityAuthorizationNegativeTest

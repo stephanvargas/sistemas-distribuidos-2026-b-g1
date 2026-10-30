@@ -1,87 +1,94 @@
-# CP1 - Attack Surface Map (EduTrack)
+# CP1 - Mapa de Superficie de Ataque y Límites de Confianza (Dominio de Identidad)
 
-Sources: `05-architecture/overview.md`, `ADR-006-api-gateway-jwt.md`, `ADR-003-persistence-strategy.md`, `07-api/contracts/openapi/identity-service.yaml` of `educk-docs`.
+- **Autor:** Stephan Vargas Quiroga (@stephanvargas)
+- **Frontera asignada:** TB2a (`educk-api-gateway` $\rightarrow$ `educk-identity-api`)
+- **Fuentes de referencia arquitectónica:** `05-architecture/overview.md`, `ADR-006-api-gateway-jwt.md`, `07-api/contracts/openapi/identity-service.yaml`.
 
-## 1. Data-flow diagram with trust boundaries
+---
 
-My boundary is **TB2a** (highlighted in red).
+## 1. Topología del Sistema y Delimitación de Fronteras de Confianza
+
+El siguiente diagrama detalla la arquitectura de distribución y control de accesos de EduTrack, destacando en rojo la frontera **TB2a**, que constituye el núcleo de autenticación y custodia de identidades del sistema.
 
 ```mermaid
-flowchart LR
-  P[Parent / Teacher / Student browser]
-  A[Admin browser]
-
-  subgraph TB1 [TB1 internet -> edge]
-    PORT[educk-front + portals<br/>identity / academic / attendance / communication]
-    GW[educk-api-gateway :8080<br/>JWT validation & routing]
+flowchart TD
+  subgraph EXTERNAL["Zona No Confiable (Internet / Clientes Externos)"]
+    direction LR
+    CLI_APP["Navegadores Clientes<br/>(Estudiantes, Padres, Profesores, Admin)"]
   end
 
-  subgraph INTERNAL [internal docker network]
-    ID[educk-identity-api :8081<br/>auth & user management]
-    AC[educk-academic-api :8082]
-    AT[educk-attendance-api :8083]
-    CM[educk-communication-api :8085]
-    WK[educk-worker / notifications :8084]
-    MQ[[RabbitMQ edutrack.events]]
-    IDB[(educk-identity-db :5431<br/>users, refresh_tokens, roles)]
-    ADB[(educk-academic-db)]
-    TDB[(educk-attendance-db)]
-    CDB[(educk-communication-db)]
+  subgraph DMZ["Zona Perimetral (Frontera de Ingress - TB1)"]
+    PORTAL["Módulos Front-End Institucionales<br/>(educk-front & Portales SPA)"]
+    GATEWAY["API Gateway Perimetral (:8080)<br/>Spring Cloud Gateway + Enrutamiento"]
   end
 
-  SMTP[external email / push provider]
+  subgraph INTERNAL_CORE["Red Interna Privada de Microservicios (Docker Bridge)"]
+    direction TB
+    
+    subgraph IDENTITY_SUBSYSTEM["Sub-dominio de Identidad (TB2a - ASIGNADO)"]
+      AUTH_API["educk-identity-api (:8081)<br/>• AuthController & JWT Provider<br/>• PasswordEncoder (BCrypt cost 12)<br/>• Gestión de Perfiles y Sesiones"]
+      AUTH_DB[("educk-identity-db (:5431)<br/>PostgreSQL: users, roles, refresh_tokens")]
+    end
 
-  P -->|HTTPS| PORT
-  A -->|HTTPS| PORT
-  PORT -->|HTTPS + Credentials / Bearer JWT| GW
-  GW ==>|TB2a REST + X-User-Id / X-User-Role| ID
-  GW -->|TB2b REST + X-User-Id| CM
-  GW -->|TB2c REST + X-User-Id| AC
-  GW -->|TB2d REST + X-User-Id| AT
-  ID -->|TB4 SQL| IDB
-  AC -->|TB4 SQL| ADB
-  AT -->|TB4 SQL| TDB
-  CM -->|TB4 SQL| CDB
-  AC -.->|TB3 AMQP GradeCreated| MQ
-  AT -.->|TB3 AMQP StudentAbsent| MQ
-  CM -.->|TB3 AMQP MessageSentEvent| MQ
-  MQ -.->|TB3 consume| WK
-  WK -->|TB5 HTTPS| SMTP
+    subgraph DOMAIN_SERVICES["Servicios de Dominio Académico y Comunicación"]
+      ACADEMIC["educk-academic-api (:8082)"]
+      ATTENDANCE["educk-attendance-api (:8083)"]
+      COMMS["educk-communication-api (:8085)"]
+      WORKER["educk-worker (:8084)"]
+    end
+  end
 
-  linkStyle 3 stroke:#d00,stroke-width:4px
-  style ID stroke:#d00,stroke-width:3px
+  CLI_APP -->|HTTPS / Credenciales & Bearer JWT| PORTAL
+  PORTAL -->|Tráfico HTTP Ingress| GATEWAY
+
+  GATEWAY ==>|TB2a: Ingress HTTP + Propagación de Identidad| AUTH_API
+  GATEWAY -->|TB2b: HTTP Interno| COMMS
+  GATEWAY -->|TB2c: HTTP Interno| ACADEMIC
+  GATEWAY -->|TB2d: HTTP Interno| ATTENDANCE
+
+  AUTH_API -->|TB4: Conexión JDBC / Consultas SQL| AUTH_DB
+
+  style AUTH_API fill:#ffdddd,stroke:#cc0000,stroke-width:3px
+  style IDENTITY_SUBSYSTEM fill:#fff5f5,stroke:#cc0000,stroke-dasharray: 5 5
+  linkStyle 2 stroke:#cc0000,stroke-width:4px
 ```
 
-| ID | Trust boundary | Owner |
-|---|---|---|
-| TB1 | Internet -> portals / `educk-api-gateway` | team |
-| **TB2a** | **`educk-api-gateway` -> `educk-identity-api`** | **@stephanvargas (#74)** |
-| TB2b | `educk-api-gateway` -> `educk-communication-api` | @XimenaChala (#66) |
-| TB2c | `educk-api-gateway` -> `educk-academic-api` | team |
-| TB2d | `educk-api-gateway` -> `educk-attendance-api` | @CelesteDussan (#64) |
-| TB3 | Services <-> RabbitMQ <-> `educk-worker` | team |
-| TB4 | Each service -> its own database | team |
-| TB5 | `educk-worker` -> external email / push provider | team |
+### Matriz de Fronteras de Confianza de EduTrack
 
-## 2. Asset inventory (identity & access domain)
-
-| # | Asset | Where it lives | Classification |
+| Código | Descripción de la Frontera | Nivel de Riesgo | Responsable Técnico |
 |---|---|---|---|
-| 1 | User credentials (plaintext passwords submitted on login/registration) | Transient in HTTP payload on TB1/TB2a, never persisted plaintext | Restricted |
-| 2 | Password hashes (BCrypt work factor 12) | `users.password` in `educk-identity-db:5431` | Restricted |
-| 3 | Cryptographic JWT signing secret (`jwt.secret`) | Environment variable `JWT_SECRET` in Gateway & Identity | Restricted |
-| 4 | Refresh tokens (long-lived session strings) | `refresh_tokens.token` in `educk-identity-db` | Restricted |
-| 5 | User profile metadata (`email`, `full_name`, assigned `roles`) | `users` and `roles` tables, response bodies on TB2a | Confidential |
-| 6 | Identity context headers (`X-User-Id`, `X-User-Role`) | Internal HTTP headers forwarded across TB2a-d | Confidential |
-| 7 | OpenAPI contract `identity-service.yaml` | `educk-docs` repository | Public |
+| TB1 | Ingress perimetral de Internet hacia API Gateway | Alto | Equipo General |
+| **TB2a** | **Canal Inbound Gateway $\rightarrow$ educk-identity-api (:8081)** | **Crítico (Raíz de Confianza)** | **@stephanvargas (Issue #74)** |
+| TB2b | Canal Inbound Gateway $\rightarrow$ educk-communication-api (:8085) | Alto | @XimenaChala (Issue #66) |
+| TB2c | Canal Inbound Gateway $\rightarrow$ educk-academic-api (:8082) | Medio | Equipo General |
+| TB2d | Canal Inbound Gateway $\rightarrow$ educk-attendance-api (:8083) | Alto | @CelesteDussan (Issue #64) |
+| TB3 | Bus de Eventos Asíncronos (RabbitMQ `edutrack.events`) | Medio | Equipo General |
+| TB4 | Aislamiento de Persistencia (Cada servicio a su BD) | Alto | Equipo General |
+| TB5 | Egress a Notificaciones Externas (Email/SMS) | Medio | Equipo General |
 
-## 3. Entry points of my boundary (TB2a)
+---
 
-| Entry point | Called by | Authentication today |
-|---|---|---|
-| `POST /api/v1/auth/login` | Portals via gateway | Public; credentials verified against database |
-| `POST /api/v1/auth/refresh` | Portals via gateway | Public with refresh token payload |
-| `POST /api/v1/auth/logout` | Portals via gateway | Authenticated via gateway; revokes refresh token |
-| `GET /api/v1/auth/users/{id}` | Portals via gateway | Gateway forwards `X-User-Id`; service performs no object ownership verification |
-| `POST /api/v1/auth/validate` | Internal gateway/services | Requires `Bearer` token header; verifies JWT claims |
-| TCP port 8081 on internal docker network | Any container on docker network | **None** (ADR-006 assumes trusted internal bridge) |
+## 2. Inventario de Activos de Información (Identidad y Seguridad)
+
+| Activo | Ubicación de Almacenamiento / Tránsito | Sensibilidad | Impacto ante Compromiso |
+|---|---|---|---|
+| **Contraseñas en Claro** | Cargas HTTP transitorias en `/login` y registro | Restringido | Suplantación total de cualquier usuario del colegio |
+| **Hashes Criptográficos** | Columna `users.password` (BCrypt cost 12) en BD :5431 | Restringido | Exposición a ataques de diccionario offline |
+| **Secreto de Firma JWT** | Variable de entorno `JWT_SECRET` en Gateway e Identity | Restringido | Capacidad de falsificar tokens con rol `ROLE_ADMIN` |
+| **Tokens de Refresco (Refresh)** | Tabla `refresh_tokens` y almacenamiento cliente | Restringido | Secuestro y persistencia de sesiones de larga duración |
+| **Perfiles de Usuario** | Datos de nombre, rol, correo en `users` y `roles` | Confidencial | Fuga de privacidad institucional y enumeración (BOLA) |
+| **Headers de Contexto** | Encabezados `X-User-Id` y `X-User-Role` entre contenedores | Confidencial | Manipulación de autorización en microservicios downstream |
+| **Contrato OpenAPI** | `identity-service.yaml` en `educk-docs` | Público | Reconocimiento de rutas por parte de adversarios |
+
+---
+
+## 3. Catálogo de Puntos de Entrada en TB2a
+
+| Endpoint Expuesto | Verbo HTTP | Control de Autenticación Vigente | Vector Vulnerable |
+|---|---|---|---|
+| `/api/v1/auth/login` | POST | Público; validación contra PostgreSQL | Fuerza bruta sin throttling en capa interna |
+| `/api/v1/auth/refresh` | POST | Público con token de refresco | Reemisión sin revocar token previo comprometido |
+| `/api/v1/auth/logout` | POST | Token de refresco requerido | Revocación en memoria sin lista distribuida |
+| `/api/v1/auth/users/{id}` | GET | Gateway reenvía token; servicio no valida dueño | **BOLA / IDOR:** Extracción de perfiles ajenos |
+| `/api/v1/auth/validate` | POST | Header `Authorization: Bearer <token>` | Consumo directo sin validar red de origen |
+| Puerto TCP 8081 | Cualquier protocolo | Confianza implícita en red de contenedores | Bypass directo del API Gateway (Spoofing) |
