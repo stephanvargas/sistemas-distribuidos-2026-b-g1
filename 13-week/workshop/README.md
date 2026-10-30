@@ -14,11 +14,19 @@ Individual workshop for Distributed Systems 2026-B (Corte 3).
 - REFLECTION_DOC: https://docs.google.com/document/d/1jH4xmZqfupyPUwrXD4eS8OTzg7g1L59ZPtq7kRdD5yY/edit?usp=sharing
 <!-- CONFIG-END -->
 
+## Security Backlog Stories
+
+| Issue | STRIDE | Priority | Title |
+|---|---|---|---|
+| [#76](https://github.com/code-corhuila/educk-docs/issues/76) | I (Info Disclosure / BOLA) | P0 | Object ownership and role check on user profile reads |
+| [#77](https://github.com/code-corhuila/educk-docs/issues/77) | S (Spoofing) | P1 | Caller authentication and internal network isolation for identity-api |
+| [#78](https://github.com/code-corhuila/educk-docs/issues/78) | E (Elevation of Privilege) | P1 | Enforce strict RBAC and self-service boundary on role assignments |
+
 ## Directory Structure
 
 ```text
 13-week/workshop/
-├── README.md                 <- Canonical configuration and tracking (CP0)
+├── README.md                 <- Canonical configuration and tracking (CP0, CP3, CP7)
 ├── 01-attack-surface.md      <- Attack surface map and asset inventory (CP1)
 └── 04-security-ci/           <- Security gates and negative test (CP4, CP8)
     ├── security.yml
